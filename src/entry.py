@@ -4,17 +4,14 @@ import cleanup
 
 
 class Default(WorkerEntrypoint):
-    async def scheduled(self, controller):
-        # WorkerEntrypoint methods only receive their "natural" event arg -
-        # bindings come from self.env (auto-set on the instance), not extra
-        # positional params. Declaring env/ctx params here made the runtime
-        # silently pass None for them instead of the real bindings object,
-        # crashing every cron run with "'NoneType' object has no attribute
-        # 'CLOUDFLARE_API_TOKEN'". Same bug class already fixed for fetch()
-        # below, which crashed loudly instead of silently.
+    async def scheduled(self, controller, env, ctx):
+        # Unlike fetch() below, the runtime unconditionally calls scheduled()
+        # with (controller, env, ctx) - narrowing this signature (as tried
+        # previously) causes a hard "takes N positional arguments but 3 were
+        # given" TypeError, it does not fall back to self.env/self.ctx.
         print(f"cloudflare-pages-cleanup: cron triggered ({controller.cron})")
         try:
-            await cleanup.run(self.env)
+            await cleanup.run(env)
         except Exception as exc:
             # Re-raise after logging so the invocation shows as failed in the
             # Cron Trigger's Past Events table, instead of silently vanishing.
