@@ -13,6 +13,13 @@
 		"crons": ["0 0 * * *"]
 	},
 
+	"observability": {
+		"logs": {
+			"enabled": false,
+			"invocation_logs": true
+		}
+	},
+
 	// keep_vars only protects vars that are NOT declared below at all -
 	// without it, `wrangler deploy` deletes every dashboard-set var first,
 	// including ones (like CLOUDFLARE_ACCOUNT_ID) that only exist there.
