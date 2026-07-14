@@ -13,19 +13,20 @@
 		"crons": ["0 0 * * *"]
 	},
 
-	// Without this, `wrangler deploy` deletes every dashboard-set var first
-	// and re-creates only the ones listed below - which would wipe out
-	// CLOUDFLARE_ACCOUNT_ID (set via the dashboard, see README) on every
-	// deploy. keep_vars leaves dashboard-set vars alone.
+	// keep_vars only protects vars that are NOT declared below at all -
+	// without it, `wrangler deploy` deletes every dashboard-set var first,
+	// including ones (like CLOUDFLARE_ACCOUNT_ID) that only exist there.
+	// A var that IS declared below always gets overwritten by its local
+	// value on every deploy regardless of this flag, which is exactly why
+	// CLOUDFLARE_ACCOUNT_ID must stay out of this file entirely (see below).
 	"keep_vars": true,
 
-	// Non-secret configuration. CLOUDFLARE_ACCOUNT_ID is deliberately left
-	// blank here (and set via the dashboard as a "Text" variable instead,
-	// see README) so the real value never ends up committed to a
-	// (potentially public) repo, even though it isn't a credential on its
-	// own and doesn't need to be write-only like a "Secret".
+	// Non-secret configuration. CLOUDFLARE_ACCOUNT_ID is deliberately
+	// omitted here entirely (set via the dashboard as a "Text" variable
+	// instead, see README) - declaring it here even as an empty string
+	// would make every deploy overwrite the dashboard's real value back to
+	// blank, regardless of keep_vars above.
 	"vars": {
-		"CLOUDFLARE_ACCOUNT_ID": "",
 		"KEEP_PRODUCTION": "3",
 		"KEEP_PREVIEW_PER_BRANCH": "3",
 		"EXCLUDE_PROJECTS": "",

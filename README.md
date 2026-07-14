@@ -23,10 +23,16 @@ No site's build command, CI config, or deploy pipeline needs to change for this 
    uv sync
    ```
 
-2. Create a scoped Cloudflare API token — dashboard → **My Profile → API Tokens → Create Custom Token**:
-   - Permissions: **Account / Cloudflare Pages / Edit**
-   - Account Resources: restrict to your one account (not "All accounts")
-   - No zone permissions needed
+2. Create a scoped Cloudflare API token:
+   1. Go to [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) (dashboard → click your profile icon, top right → **My Profile → API Tokens**).
+   2. Select **Create Token**.
+   3. Scroll to the bottom and select **Create Custom Token** (skip the predefined templates).
+   4. Name it something identifiable, e.g. `pages-cleanup`.
+   5. Under **Permissions**, add one row: **Account** / **Cloudflare Pages** / **Edit**.
+   6. Under **Account Resources**, choose **Specific account** and select your one account (leave it off "All accounts").
+   7. Leave **Zone Resources** as-is — this token needs no zone permissions.
+   8. Select **Continue to summary**, review, then **Create Token**.
+   9. Copy the token immediately — Cloudflare only displays it once, and there's no way to view it again afterwards (only revoke and reissue).
 
    Never commit this token. It's provisioned as an encrypted Worker secret in the next step:
 
@@ -65,6 +71,16 @@ curl "http://localhost:8787/cdn-cgi/handler/scheduled?cron=*+*+*+*+*"
 ```
 
 Running against a second Cloudflare account means deploying a second, separate copy of this Worker with its own token and account ID — a single API token cannot span accounts.
+
+## Deploying via Workers Builds (optional)
+
+Instead of (or in addition to) deploying from your machine, you can connect this repo in the dashboard (**Workers & Pages → your Worker → Settings → Builds**) so it redeploys automatically on every push. Do the *first* deploy from the CLI as in Install above — the Worker and its `CLOUDFLARE_API_TOKEN` secret need to exist before a CI build can satisfy `secrets.required`. Once connected, set:
+
+- **Root directory**: `/` (`wrangler.jsonc` is at the repo root)
+- **Build command**: `pip install uv && uv sync`
+- **Deploy command**: `uv run pywrangler deploy`
+
+Do **not** leave the deploy command at Workers Builds' default `npx wrangler deploy`. Python Workers need their `workers` FFI module vendored by `pywrangler` before `wrangler` bundles the Worker — plain `wrangler deploy` skips that step entirely and falls back to an outdated bundled stub, which fails with `ModuleNotFoundError: No module named 'workers'` (`... You need to update to workers-py >= 1.90 or to pass disable_python_external_sdk`). Running through `uv run pywrangler deploy` (which vendors the package first, then calls `wrangler` for you) avoids that failure mode entirely, rather than papering over it with the `disable_python_external_sdk` compatibility flag mentioned in that error, which falls back to Cloudflare's old default SDK rather than the one this repo was written against.
 
 ## License
 
