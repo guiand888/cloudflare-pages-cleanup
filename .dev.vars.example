@@ -1,0 +1,7 @@
+# Copy this file to .dev.vars for local development (`.dev.vars` is gitignored).
+# Never commit a real token - see README.md for how to create a scoped one.
+CLOUDFLARE_API_TOKEN=
+
+# CLOUDFLARE_ACCOUNT_ID is a plain var (not a secret), so it isn't loaded
+# from .dev.vars - pass it on the command line instead, e.g.:
+#   uv run pywrangler dev --var CLOUDFLARE_ACCOUNT_ID:<your-account-id>

@@ -1,0 +1,42 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "cloudflare-pages-cleanup",
+	"main": "src/entry.py",
+	"compatibility_flags": ["python_workers"],
+	// Set this to today's date when you next touch this file
+	"compatibility_date": "2026-07-14",
+
+	// Runs once a day. Deployments accumulate slowly, so this is
+	// deliberately not aggressive - adjust the cron expression if you want
+	// it tighter.
+	"triggers": {
+		"crons": ["0 0 * * *"]
+	},
+
+	// Without this, `wrangler deploy` deletes every dashboard-set var first
+	// and re-creates only the ones listed below - which would wipe out
+	// CLOUDFLARE_ACCOUNT_ID (set via the dashboard, see README) on every
+	// deploy. keep_vars leaves dashboard-set vars alone.
+	"keep_vars": true,
+
+	// Non-secret configuration. CLOUDFLARE_ACCOUNT_ID is deliberately left
+	// blank here (and set via the dashboard as a "Text" variable instead,
+	// see README) so the real value never ends up committed to a
+	// (potentially public) repo, even though it isn't a credential on its
+	// own and doesn't need to be write-only like a "Secret".
+	"vars": {
+		"CLOUDFLARE_ACCOUNT_ID": "",
+		"KEEP_PRODUCTION": "3",
+		"KEEP_PREVIEW_PER_BRANCH": "3",
+		"EXCLUDE_PROJECTS": "",
+		// Ships safe by default. Flip to "false" only after verifying a
+		// dry run's output matches what you expect - see README.
+		"DRY_RUN": "true"
+	},
+
+	// wrangler deploy / wrangler versions upload will refuse to run until
+	// this secret has been provisioned with `wrangler secret put`.
+	"secrets": {
+		"required": ["CLOUDFLARE_API_TOKEN"]
+	}
+}
