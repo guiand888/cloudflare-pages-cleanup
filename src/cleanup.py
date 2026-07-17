@@ -37,13 +37,20 @@ async def _request(token, method, path, params=None):
 
 
 async def _list_paginated(token, path, params=None):
-    """Walks every page of a Cloudflare list endpoint and returns the combined result."""
+    """Walks every page of a Cloudflare list endpoint and returns the combined result.
+
+    per_page is capped at 10 here because the Pages "list projects" endpoint
+    rejects anything higher with a 400 (undocumented - its OpenAPI schema
+    gives no max, but the live API enforces one; verified empirically since
+    "list deployments" itself accepts up to at least 25). Using 10
+    everywhere keeps both endpoints on one shared, safe value.
+    """
     items = []
     page = 1
     params = dict(params or {})
     while True:
         params["page"] = page
-        params["per_page"] = 25
+        params["per_page"] = 10
         data = await _request(token, "GET", path, params)
         items.extend(data["result"])
         info = data.get("result_info") or {}
