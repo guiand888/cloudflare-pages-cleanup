@@ -82,6 +82,10 @@ Instead of (or in addition to) deploying from your machine, you can connect this
 
 Do **not** leave the deploy command at Workers Builds' default `npx wrangler deploy`. Python Workers need their `workers` FFI module vendored by `pywrangler` before `wrangler` bundles the Worker — plain `wrangler deploy` skips that step entirely and falls back to an outdated bundled stub, which fails with `ModuleNotFoundError: No module named 'workers'` (`... You need to update to workers-py >= 1.90 or to pass disable_python_external_sdk`). Running through `uv run pywrangler deploy` (which vendors the package first, then calls `wrangler` for you) avoids that failure mode entirely, rather than papering over it with the `disable_python_external_sdk` compatibility flag mentioned in that error, which falls back to Cloudflare's old default SDK rather than the one this repo was written against.
 
+## Known API quirks
+
+Cloudflare's Pages "list projects" endpoint (`GET /accounts/{account_id}/pages/projects`) silently rejects `per_page` above `10` with a `400` (`8000024: Invalid list options provided. Review the page or per_page parameter.`) - undocumented in its OpenAPI schema, which gives no maximum. `cleanup.py`'s `_list_paginated` caps `per_page` at `10` for this reason (confirmed empirically against a live account: `1`-`10` succeed, `11`+ fail). The Pages deployments endpoint doesn't have this ceiling, but there's no reason to special-case it, so the same fixed value of `10` is used for both.
+
 ## License
 
 [AGPL-3.0](LICENSE)
