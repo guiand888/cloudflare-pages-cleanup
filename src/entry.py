@@ -5,13 +5,18 @@ import cleanup
 
 class Default(WorkerEntrypoint):
     async def scheduled(self, controller, env, ctx):
-        # Unlike fetch() below, the runtime unconditionally calls scheduled()
-        # with (controller, env, ctx) - narrowing this signature (as tried
-        # previously) causes a hard "takes N positional arguments but 3 were
-        # given" TypeError, it does not fall back to self.env/self.ctx.
+        # The runtime unconditionally calls scheduled() with (controller, env,
+        # ctx) - narrowing this signature (as tried previously) causes a hard
+        # "takes N positional arguments but 3 were given" TypeError. But the
+        # positional `env` arg itself has repeatedly come through as None in
+        # production despite correct dashboard bindings (see incident log
+        # from 2026-07-17) - a known-flaky part of the Python Workers FFI for
+        # scheduled() (cloudflare/workers-py#27). self.env, set by
+        # WorkerEntrypoint's constructor and already proven reliable by
+        # fetch() below, doesn't go through that same per-call marshalling.
         print(f"cloudflare-pages-cleanup: cron triggered ({controller.cron})")
         try:
-            await cleanup.run(env)
+            await cleanup.run(self.env)
         except Exception as exc:
             # Re-raise after logging so the invocation shows as failed in the
             # Cron Trigger's Past Events table, instead of silently vanishing.
